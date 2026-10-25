@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack project
+        run: |
+          for z in *.zip; do unzip -o "$z"; done
+          ls -la
+          ls -la reportoverlay
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Download Russian and English OCR data
+        working-directory: reportoverlay
+        run: |
+          mkdir -p app/src/main/assets/tessdata
+          for l in rus eng; do
+            curl -fL -o app/src/main/assets/tessdata/$l.traineddata \
+              https://github.com/tesseract-ocr/tessdata_fast/raw/main/$l.traineddata
+          done
+
+      - name: Build debug APK
+        working-directory: reportoverlay
+        run: gradle assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-overlay-apk
+          path: reportoverlay/app/build/outputs/apk/debug/app-debug.apk
