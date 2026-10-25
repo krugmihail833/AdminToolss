@@ -13,7 +13,6 @@ jobs:
       - name: Unpack project
         run: |
           for z in *.zip; do unzip -o "$z"; done
-          ls -la
           ls -la reportoverlay
 
       - uses: actions/setup-java@v4
@@ -21,7 +20,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android licenses
+        continue-on-error: true
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
 
       - uses: gradle/actions/setup-gradle@v4
         with:
